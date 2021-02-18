@@ -1,14 +1,20 @@
-# $@ is left side of rule, $< is the first dependency
-%.o: %.asm
-	rgbasm $< -o $@
+# # $@ is left side of rule, $< is the first dependency
+# %.o: %.asm
+# 	rgbasm $< -o $@
 
-# $@ is the left side of the rule, $^ is the right side
-chip8: main.o rom.o ram.o
-	rgblink -t -w $^ -o $@.gb
+# # $@ is the left side of the rule, $^ is the right side
+# chip8: main.o rom.o ram.o
+# 	rgblink -t -w $^ -o $@.gb
+# 	rgbfix -v -p 0 $@.gb
+
+# $@ is the left side of the rule
+chip8: main.asm rom.asm ram.asm
+	rgbasm $< -o main.o
+	rgblink -t -w main.o -o $@.gb
 	rgbfix -v -p 0 $@.gb
 
 run: chip8
-	./emulator -r chip8.gb
+	./emulator -r $<.gb
 
 .PHONY: clean
 clean:

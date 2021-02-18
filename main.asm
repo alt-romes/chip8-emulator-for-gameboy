@@ -16,7 +16,7 @@ endr
 section "main", ROM0[$150]
 
 start:
-
+include "init.asm"
 
     ; Turn off the LCD (There's a solution to do access VRAM while it's on, but we're setting it off to access it the easy way) (we can only do it during VBLANK)
     ; This local block will wait for v blank before proceding
