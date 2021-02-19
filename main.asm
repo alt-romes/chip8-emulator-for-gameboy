@@ -1,7 +1,10 @@
 include "hardware.inc"
 
+
+
 include "rom.asm"
 include "ram.asm"
+include "operations.asm"
 
 section "header", ROM0[$100] ; Memory type ROM0 and the address where the section must be placed ($100)
 
@@ -13,49 +16,70 @@ rept $150 - $104 ; Header spans $104 - $14F, but *rgbfix* sets the header for us
     db 0         ; So we set everything as 0
 endr
 
+
+
 section "main", ROM0[$150]
 
 start:
+    
 include "init.asm"
 
-    ; Turn off the LCD (There's a solution to do access VRAM while it's on, but we're setting it off to access it the easy way) (we can only do it during VBLANK)
-    ; This local block will wait for v blank before proceding
-.wait_v_blank ; the dot before the label defines a local label
-    ldh a, [rLY] ; ldh access $FF00-$FFFF with an offset, it's faster than ld
-    cp 144       ; LCD is past VBLANK when LY is in 144-153
-    jr c, .wait_v_blank ; it'll jump back while a < 144
-        ; cp will subtract a - 144, if a < 144, C will be set because for example 10 - 144 = 122 (a subtraction to 10 made it a bigger number (had carry)) 
-        ; cp $x will set carry if a < $x , carry will be reset if a >= $x, zero will be set if a == $x, and reset if a != $x
 
-    ; Finally disable the display
+.main_loop
 
-    xor a ; Set a to 0
-    ld [rLCDC], a ; Set LCDC to 0, this will disable bit 7, consequently it will disable the display
+    ; --------------------
+    ; Fetch opcode
+    ; --------------------
+    ; Get program counter ( 2 bytes )
+    ld a, [program_counter] ; Get the first (high) byte of the program counter
+    ld b, a ; b has highest byte
+    ld a, [program_counter+1] ; Fetch the second byte of the program counter
+    ld c, a ; bc now has the program counter
+    ; Add program counter to position of chip8's memory (bc + hl) to get physical address of chip8's current instruction
+    ld hl, memory
+    ; The following code is actually useless bc i could do add hl, bc ...
+    add l   ; Add lower byte of memory position (l) to lower byte of the program counter
+    ld l, a ; Set result in l
+    ld a, b
+    adc h   ; Add higher byte of memory position (h) to higher byte of program counter b + carry from previous addition
+    ld h, a ; Set result in h. hl now has the memory address of the current memory address of chip8
+    ; Fetch opcode ( 2 bytes ) from chip8's memory
+    ld a, [hli] ; Get highest byte of opcode and store in d
+    ld d, a
+    ld a, [hl]  ; Get lower byte of opcode and store in e
+    ld e, a     ; *de* now has the opcode
 
-    ; Access VRAM now that it's disabled
 
-    ld hl, $9000 ; $9000 is block 2 of VRAM
-    ld de, font_tiles ; Load to de address where FontTiles are ( they will be defined later )
-    ld bc, font_tiles_end - font_tiles ; Load size of tiles to bc
-.copy_font
-    ld a, [de] ; Grab 1 byte from the source
-    ld [hli], a ; Place it at the destination and increment hl
-    inc de ; Move to next byte
-    dec bc ; Decrement bytes left
-    ld a, b ; Check if count is 0, since dec bc doesn't update flags
-    or c    ; If both a and c are 0, or a c will set zero
-    jr nz, .copy_font
+    ; Increment program counter by 2 (because each opcode is 2 bytes)
+    inc bc
+    inc bc
+    ld a, b ; Store higher byte first
+    ld [program_counter], a ; If anyone is wondering, (a) is the only 8bit register that can ld with memory
+    ld a, c ; Store lower byte next
+    ld [program_counter+1], a
 
-    ; The font tiles are now set, now we write the tilemap 
+    ; For testing, use opcode directly to try and run one of the string printing functions in operations.asm
 
-    ld hl, $9800 ; this will print the string at the top left corner of the screen
-    ld de, hello_world_str
-.copy_string
-    ld a, [de]
-    ld [hli], a
-    inc de
-    and a ; Check if the byte we copied is zero (and a, a will set zero flag if a is zero)
-    jr nz, .copy_string ; Continue if it's not
+    ; Multiply de by 2 to get the correct offset in the opcode table
+    ld de, 0 ; Override opcode with manual value
+    sla e    ; Because the opcode table is made of function addresses, each entry is 2 bytes -> multiply *de* by 2 to get the correct offset
+    jp nc, .shift_no_carry
+    sla d   ; If there was carry, shift high byte and add 1
+    inc d
+    jr .end_16bshift
+.shift_no_carry:
+    sla d
+.end_16bshift:
+    ; Get opcode function in table address
+    ld hl, operations_table
+    add hl, de
+._pc_current:
+    ld de, ._pc_current
+    push de
+    jp hl
+
+
+
 
     ; Set background palette
     ld a, %11100100 ; Palette: 11 10 01 00
@@ -86,7 +110,10 @@ incbin "font.chr" ; incbin tells RGBASM to copy the files into the produced ROM
 font_tiles_end:
 
 
-section "Hello World string", ROM0
+section "strings", ROM0
 
 hello_world_str:
     db "Hello World!", 0 ; db copies data bytes, there's also dw for copy data words and dl for 32-bit longs
+
+goodbye_world_str:
+    db "Goodbye World!", 0 ; db copies data bytes, there's also dw for copy data words and dl for 32-bit longs

@@ -8,7 +8,7 @@
 # 	rgbfix -v -p 0 $@.gb
 
 # $@ is the left side of the rule
-chip8: main.asm rom.asm ram.asm
+chip8: main.asm rom.asm ram.asm operations.asm
 	rgbasm $< -o main.o
 	rgblink -t -w main.o -o $@.gb
 	rgbfix -v -p 0 $@.gb
