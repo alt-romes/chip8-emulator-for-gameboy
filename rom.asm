@@ -2,7 +2,7 @@
 section "chip8rom", ROM0
 
 chip8_rom:
-incbin "chip8-roms/op1.ch8"
+incbin "roms/op1.ch8"
 chip8_rom_end:
 
 chip8_font:

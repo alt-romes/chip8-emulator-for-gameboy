@@ -54,27 +54,32 @@ include "init.asm"
     ; Increment program counter by 2 (because each opcode is 2 bytes)
     inc bc
     inc bc
-    ld a, b ; Store higher byte first
+    ld a, b ; Store higher byte in the first byte of the program counter
     ld [program_counter], a ; If anyone is wondering, (a) is the only 8bit register that can ld with memory
-    ld a, c ; Store lower byte next
+    ld a, c ; Store lower byte in second byte of the program counter
     ld [program_counter+1], a
 
-    ; For testing, use opcode directly to try and run one of the string printing functions in operations.asm
+    ; Get the correct offset: check only the first 4 bits and multiply them by 2
+    ; *de* has opcode, offset is the (first 4 bits of d)*2
+    ld c, d ; c will have offset
+    srl c
+    srl c
+    srl c
+    srl c ; Shift c >> 4 to get first 4 bits
+    sla c ; Multiply by 2
+    ld b, $0 ; bc now has offset
 
-    ; Multiply de by 2 to get the correct offset in the opcode table
-    ; ld de, 0 ; Override opcode with manual value
-    sla e    ; Because the opcode table is made of function addresses, each entry is 2 bytes -> multiply *de* by 2 to get the correct offset
-    rl d     ; Rotate left through carry will use carry from the last operation
     ; Get function pointer from table address + offset
     ld hl, operations_table
-    add hl, de
-    ld a, [hli] ; Load lower byte of function address into (eventually) l
-    ld e, a
+    add hl, bc  ; address + offset
+    ld a, [hli] ; Load lower byte of function address into c (and later l)
+    ld c, a
     ld a, [hl]  ; Load upper byte of function addres in h
     ld h, a
-    ld l, e     ; (hl) now has function address
+    ld l, c     ; (hl) now has function address
 
-    rst $30     ; Same as (call hl) bc of the small hack
+    ; Call the function address stored in (hl) with *de* as the argument for the opcode
+    rst $30     ; Same as (call hl) bc of the small hack added in section rstvectors
 
 
     ; Set background palette
