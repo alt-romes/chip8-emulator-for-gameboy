@@ -2,9 +2,9 @@ include "hardware.inc"
 
 
 
+include "operations.asm"
 include "rom.asm"
 include "ram.asm"
-include "operations.asm"
 
 section "header", ROM0[$100] ; Memory type ROM0 and the address where the section must be placed ($100)
 
@@ -17,13 +17,16 @@ rept $150 - $104 ; Header spans $104 - $14F, but *rgbfix* sets the header for us
 endr
 
 
+    ; Kill rst vector $30 and replace it with jp hl. Now (rst $30) will do basically (call hl)
+section "rstvectors", ROM0[$30]
+  jp hl
+
 
 section "main", ROM0[$150]
 
 start:
     
 include "init.asm"
-
 
 .main_loop
 
@@ -61,24 +64,19 @@ include "init.asm"
     ; For testing, use opcode directly to try and run one of the string printing functions in operations.asm
 
     ; Multiply de by 2 to get the correct offset in the opcode table
-    ld de, 0 ; Override opcode with manual value
+    ld de, 1 ; Override opcode with manual value
     sla e    ; Because the opcode table is made of function addresses, each entry is 2 bytes -> multiply *de* by 2 to get the correct offset
-    jp nc, .shift_no_carry
-    sla d   ; If there was carry, shift high byte and add 1
-    inc d
-    jr .end_16bshift
-.shift_no_carry:
-    sla d
-.end_16bshift:
-    ; Get opcode function in table address
+    rl d     ; Rotate left through carry will use carry from the last operation
+    ; Get function pointer from table address + offset
     ld hl, operations_table
     add hl, de
-._pc_current:
-    ld de, ._pc_current
-    push de
-    jp hl
+    ld a, [hli] ; Load lower byte of function address into (eventually) l
+    ld e, a
+    ld a, [hl]  ; Load upper byte of function addres in h
+    ld h, a
+    ld l, e     ; (hl) now has function address
 
-
+    rst $30     ; Same as (call hl) bc of the small hack
 
 
     ; Set background palette

@@ -1,3 +1,4 @@
+; Operations
 section "operations", ROM0
 
 operations_table:

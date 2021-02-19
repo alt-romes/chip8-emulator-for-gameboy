@@ -40,6 +40,8 @@ FONTSET_START_ADDRESS EQU $50
 
 
 
+
+
     ; The following part is here just for testing for now - It disables LCDC and prepares the font
     
 
