@@ -8,10 +8,11 @@
 # 	rgbfix -v -p 0 $@.gb
 
 # $@ is the left side of the rule
+# -p (pad) with 0xe4 so it breaks if accesses outside supposed space
 chip8: main.asm rom.asm ram.asm operations.asm
 	rgbasm $< -o main.o
 	rgblink -t -w main.o -o $@.gb
-	rgbfix -v -p 0 $@.gb
+	rgbfix -v -p 0xe4 $@.gb
 
 run: chip8
 	./emulator -r $<.gb

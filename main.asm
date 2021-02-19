@@ -1,7 +1,5 @@
 include "hardware.inc"
 
-
-
 include "operations.asm"
 include "rom.asm"
 include "ram.asm"
@@ -64,7 +62,7 @@ include "init.asm"
     ; For testing, use opcode directly to try and run one of the string printing functions in operations.asm
 
     ; Multiply de by 2 to get the correct offset in the opcode table
-    ld de, 1 ; Override opcode with manual value
+    ; ld de, 0 ; Override opcode with manual value
     sla e    ; Because the opcode table is made of function addresses, each entry is 2 bytes -> multiply *de* by 2 to get the correct offset
     rl d     ; Rotate left through carry will use carry from the last operation
     ; Get function pointer from table address + offset
