@@ -97,9 +97,16 @@ include "init.asm"
     ld a, $81 ; $ identifies hexadecimal, so: 0x81 // 1000 0001
     ld [rLCDC], a
 
-    ; trap in infinite loop to avoid issues
-.lockup
-    jr .lockup
+    ; wait sometime (wait for div to overflow)
+    ld a, 0
+    ld [rDIV], a ; Write to div to set it to zero
+.wait_for_div:
+    ld a, [rDIV]
+    cp 10       ; Wait for DIV full cycle
+    jp nz, .wait_for_div
+
+
+    jp .main_loop
 
 
 
