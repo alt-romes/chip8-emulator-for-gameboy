@@ -61,11 +61,10 @@ include "init.asm"
 
     ; Get the correct offset: check only the first 4 bits and multiply them by 2
     ; *de* has opcode, offset is the (first 4 bits of d)*2
-    ld c, d ; c will have offset
-    srl c
-    srl c
-    srl c
-    srl c ; Shift c >> 4 to get first 4 bits
+    ld a, d ; c will have offset with a as an aux
+    swap a
+    and $f ; swap a and $f is shift a >> 4 to get first 4 bits but with less cycles
+    ld c, a
     sla c ; Multiply by 2
     ld b, $0 ; bc now has offset
 
