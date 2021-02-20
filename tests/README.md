@@ -3,7 +3,7 @@
 - Set operation 00E0 to print out a success message
 - Set print outs in every operation you're testing
 - Set operation 0000 to stop execution i.e. exit()
-- Run ROM
+- Run ROM (for this emulator change `rom.asm` manually)
 
 ### JP1 Test
 
