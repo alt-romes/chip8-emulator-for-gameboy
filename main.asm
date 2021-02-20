@@ -71,7 +71,7 @@ include "init.asm"
     ; Get function pointer from table address + offset
     ld hl, operations_table
     add hl, bc  ; address + offset
-    ld a, [hli] ; Load lower byte of function address into c (and later l)
+    ld a, [hli] ; Load lower byte of function address into c (and later l) (GB is little endian)
     ld c, a
     ld a, [hl]  ; Load upper byte of function addres in h
     ld h, a

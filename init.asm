@@ -10,6 +10,9 @@ FONTSET_START_ADDRESS EQU $50
     ld a, l
     ld [program_counter+1], a ; l is in the second byte of the program counter
 
+    ; Init stack pointer
+    ld hl, stack_pointer
+    ld [hl], $0 ; stack pointer starts at 0
 
     ; Copy chip8 ROM file to chip8 memory
     ld hl, memory+START_ADDRESS ; hl has address of the chip8 memory + offset
