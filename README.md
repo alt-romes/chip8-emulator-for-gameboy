@@ -18,5 +18,5 @@ To run, a gameboy or gameboy emulator is needed - i pair it with [my emulator](h
 
 ## References
 
-Compiler, Linker and Fixer: [RGBDS](https://rgbds.gbdev.io)
-Hello World: [ISSOtm's tutorial](https://eldred.fr/gb-asm-tutorial/hello-world.html)
+* Compiler, Linker and Fixer: [RGBDS](https://rgbds.gbdev.io)
+* Hello World: [ISSOtm's tutorial](https://eldred.fr/gb-asm-tutorial/hello-world.html)
