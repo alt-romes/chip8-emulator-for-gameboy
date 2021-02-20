@@ -16,6 +16,10 @@ To run, a gameboy or gameboy emulator is needed - i pair it with [my emulator](h
 ./emulator -r chip8.gb
 ```
 
+### Testing
+
+See [testing](https://github.com/alt-romes/chip8-emulator-for-gameboy/tree/master/tests)
+
 ## References
 
 * Compiler, Linker and Fixer: [RGBDS](https://rgbds.gbdev.io)
