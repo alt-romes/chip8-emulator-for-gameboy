@@ -15,10 +15,26 @@ advance_program_counter: macro
     ld [program_counter], a 
     ld a, l
     ld [program_counter+1], a
+
+    endm
+
+; Gets address of register Vx
+; @param d -> holds index of register in the low 4 bits
+; @return hl -> memory position (address) of register Vx
+get_register_addr_x: macro
+    ; Get register offset
+    ld a, d ; High byte of opcode into a
+    and $f  ; Get register number from low 4 bits 
+    ld c, a
+    ; Get register address in memory
+    ld hl, registers
+    ld b, $0
+    add hl, bc ; Registers + Vx Offset
     endm
 
 ; Functions
 
+; Gets value of Vx and Vy and address of Vx:
 ; @param de -> holds opcode $-xy-
 ; @return e -> value of Vy
 ; @return a -> value of Vx
@@ -179,12 +195,8 @@ _2_call_addr:
 
 
 _3_se_vx_byte:  ; Skip if equal (Vx == byte)
-    ld a, d ; High byte of opcode into a
-    and $f  ; Get register number
-    ld hl, registers
-    ld c, a
-    ld b, $0
-    add hl, bc ; Registers address + offset
+    ; Get address of Vx
+    get_register_addr_x ; Macro @return address of Vx in hl
     ld a, [hl] ; Load register value to a
     cp e       ; Compare register value to byte
     jr nz, .dont_skip_op
@@ -197,13 +209,8 @@ _3_se_vx_byte:  ; Skip if equal (Vx == byte)
 
 
 _4_sne_vx_byte: ; Skip if not equal (Vx != byte)
-    ; This function is almost identical to the one above
-    ld a, d ; High byte of opcode into a
-    and $f  ; Get register number
-    ld hl, registers
-    ld c, a
-    ld b, $0
-    add hl, bc ; Registers address + offset
+    ; Get address of Vx
+    get_register_addr_x ; Macro @return address of Vx in hl
     ld a, [hl] ; Load register value to a
     cp e       ; Compare register value to byte
     jr z, .dont_skip_op
@@ -215,7 +222,8 @@ _4_sne_vx_byte: ; Skip if not equal (Vx != byte)
     ret
 
 
-_5_se_vx_vy:    ; Skip if Vx == Vy (and last 4 bits are ignored) 
+_5_se_vx_vy:    ; Skip if Vx == Vy (and last 4 bits are ignored)
+    ; Get value of Vx and Vy
     call get_registers_xy ; @return e = Vy , @return a = Vx
     cp e       ; Compare register value to other register value
     jr nz, .dont_skip_op
@@ -228,31 +236,19 @@ _5_se_vx_vy:    ; Skip if Vx == Vy (and last 4 bits are ignored)
 
 
 _6_ld_vx_byte:  ; Vx = byte
-    ; Get register offset
-    ld a, d ; High byte of opcode into a
-    and $f  ; Get register number from low 4 bits 
-    ld c, a
-    ; Get register address in memory
-    ld hl, registers
-    ld b, $0
-    add hl, bc ; Registers + Vx Offset
+    ; Get address of Vx
+    get_register_addr_x ; Macro @return address of Vx in hl
     ; Load byte to register
     ld a, e ; Byte is in e
-    ld [hl], a
+    ld [hl], a ; Save new value in Vx
     ld d, $06
     ld d, d ; Debug message
     ret
 
 
 _7_add_vx_byte: ; Vx += byte
-    ; Get register offset
-    ld a, d ; High byte of opcode into a
-    and $f  ; Get register number from low 4 bits 
-    ld c, a
-    ; Get register address in memory
-    ld hl, registers
-    ld b, $0
-    add hl, bc ; Registers + Vx Offset
+    ; Get address of Vx
+    get_register_addr_x ; Macro @return address of Vx in hl
     ; Load value of register to a
     ld a, [hl]
     add e ; Add byte
@@ -287,6 +283,7 @@ _8_table:       ; Last 4 bits define operation
 
 
 _9_sne_vx_vy:   ; Skip if Vx != Vy
+    ; Get value of Vx and Vy and address of Vx
     call get_registers_xy ; @return e = Vy , @return a = Vx
     cp e ; Compare registers values
     jr z, .dont_skip_op
@@ -334,25 +331,9 @@ _f_table:
 
 
 _8xy0:  ; Ld Vx, Vy (Vx = Vy)
-    ; Get value of second register
-    ld hl, registers
-    ; Get offset of second register in e by >>4
-    ld a, e     
-    swap a
-    and $f
-    ld c, a
-    ld b, $0
-    add hl, bc ; Register address + Vy offset
-    ld a, [hl] ; Save register value to e
-    ld e, a
-    ; Get register offset
-    ld a, d ; High byte of opcode into a
-    and $f  ; Get register number from low 4 bits 
-    ld c, a
-    ; Get register address in memory
-    ld hl, registers
-    ld b, $0
-    add hl, bc ; Registers + Vx Offset
+    ; Get value of Vy and address of Vx
+    ; Call even tho i don't use Vx value -> This function has 48 extra cycles (call+ret+unnecessary op), but saves 21 bytes
+    call get_registers_xy    
     ; Set value of Vy (that's in e) into Vx
     ld a, e
     ld [hl], a
@@ -454,7 +435,7 @@ _8xy6:  ; SHR Vx (Vx >>= 1)
     ld c, l
     ld b, h ; Save hl
     ld hl, registers + $f ; Register VF
-    jr .set_no_carry
+    jr nc, .set_no_carry
     ; Set carry flag 
     set 0, [hl]
 .store_val:
@@ -514,7 +495,7 @@ _8xye:  ; Vx <<= 1
     ld c, l
     ld b, h ; Save hl
     ld hl, registers + $f ; Register VF
-    jr .set_no_carry
+    jr nc, .set_no_carry
     ; Set carry flag 
     set 0, [hl]
 .store_val:
