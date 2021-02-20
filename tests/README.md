@@ -1,9 +1,11 @@
-## Tests
+## Testing
 
-- Set operation 00E0 to print out a success message
-- Set print outs in every operation you're testing
-- Set operation 0000 to stop execution i.e. exit()
-- Run ROM (for this emulator change `rom.asm` manually)
+1) Set operation 00E0 to print out a success message
+2) Set operation 0000 to stop execution i.e. exit()
+3) Set print outs in every operation you want debugging info in
+4) Run ROM (for this emulator change `rom.asm` manually)
+
+## Tests Code
 
 ### JP1 Test
 
