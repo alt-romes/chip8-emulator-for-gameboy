@@ -2,8 +2,9 @@
 section "chip8rom", ROM0
 
 chip8_rom:
-; incbin "tests/jp1_test.ch8"
-incbin "tests/call2_and_ret00ee_test.ch8"
+;incbin "tests/jp1_test.ch8"
+;incbin "tests/call2_and_ret00ee_test.ch8"
+incbin "tests/ld_se_sne_34569_test.ch8"
 chip8_rom_end:
 
 chip8_font:

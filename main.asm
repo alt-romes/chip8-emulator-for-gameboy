@@ -1,5 +1,7 @@
 include "hardware.inc"
 
+include "common.asm"
+
 include "operations.asm"
 include "rom.asm"
 include "ram.asm"

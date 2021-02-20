@@ -1,5 +1,53 @@
-; Operations
+
 section "operations", ROM0
+
+; Macros : They are expanded each time, not called
+
+; Advance PC: Takes 96 cycles and occupies 18 bytes
+advance_program_counter: macro
+    ld a, [program_counter]
+    ld h, a
+    ld a, [program_counter+1]
+    ld l, a
+    inc hl
+    inc hl
+    ld a, h
+    ld [program_counter], a 
+    ld a, l
+    ld [program_counter+1], a
+    endm
+
+; Functions
+
+; @param de -> holds opcode $-xy-
+; @return e -> value of Vy
+; @return a -> value of Vx
+; @return hl -> memory position of register Vx
+get_registers_xy:
+    ; Get value of second register
+    ld hl, registers
+    ; Get offset of second register in e by >>4
+    ld a, e     
+    swap a
+    and $f
+    ld c, a
+    ld b, $0
+    add hl, bc ; Register address + Vy offset
+    ld a, [hl] ; Save register value to e
+    ld e, a
+    ; Get register Vx offset
+    ld a, d ; High byte of opcode into a
+    and $f  ; Get register number from low 4 bits 
+    ld c, a
+    ; Get register address in memory
+    ld hl, registers
+    ld b, $0
+    add hl, bc ; Registers + Vx Offset
+    ; Load value of register to d
+    ld a, [hl] ; Get register value
+    ret
+
+; Operations and Tables
 
 operations_table:
     ; Define words because addressing is done with 16 bit in the gb
@@ -32,9 +80,8 @@ operations_8_table:
     dw _8xye
 
 
-    ; For all operations,
-    ; @param de - opcode
-
+; For all operations,
+; @param de - opcode
 
 _0_table:
 
@@ -142,16 +189,7 @@ _3_se_vx_byte:  ; Skip if equal (Vx == byte)
     cp e       ; Compare register value to byte
     jr nz, .dont_skip_op
     ; Skip op (program counter += 2)
-    ld a, [program_counter]
-    ld h, a
-    ld a, [program_counter+1]
-    ld l, a
-    inc hl
-    inc hl
-    ld a, h
-    ld [program_counter], a 
-    ld a, l
-    ld [program_counter+1], a
+    advance_program_counter
 .dont_skip_op:
     ld d, $03
     ld d, d ; Debug message
@@ -170,16 +208,7 @@ _4_sne_vx_byte: ; Skip if not equal (Vx != byte)
     cp e       ; Compare register value to byte
     jr z, .dont_skip_op
     ; Skip op (program counter += 2)
-    ld a, [program_counter]
-    ld h, a
-    ld a, [program_counter+1]
-    ld l, a
-    inc hl
-    inc hl
-    ld a, h
-    ld [program_counter], a 
-    ld a, l
-    ld [program_counter+1], a
+    advance_program_counter
 .dont_skip_op:
     ld d, $04
     ld d, d ; Debug message
@@ -187,44 +216,11 @@ _4_sne_vx_byte: ; Skip if not equal (Vx != byte)
 
 
 _5_se_vx_vy:    ; Skip if Vx == Vy (and last 4 bits are ignored) 
-    ; Get offset for first register
-    ld a, d ; High byte of opcode into a
-    and $f  ; Get register number from low 4 bits
-    ld c, a ; Save register number in c
-    ; Get offset for second register
-    ld a, e ; Low byte of opcode into a
-    swap a  ; (These two lines are the same as >> 4)
-    and $f  ; Get register number from high 4 bits
-    ld e, a ; Save register number in e
-    ; Get value of first register
-    ld hl, registers
-    ld b, $0
-    add hl, bc ; Registers address + Vx offset
-    ld a, [hl] ; Save register value to c
-    ld c, a
-    ; Get value of second register
-    ld hl, registers
-    ; Get offset of second register in e by >>4
-    ld a, e     
-    swap a
-    and $f
-    ld e, a
-    ld d, $0
-    add hl, de ; Register address + Vy offset
-    ld a, [hl] ; Save register value to a and compare with c
-    cp c       ; Compare register value to other register value
+    call get_registers_xy ; @return e = Vy , @return a = Vx
+    cp e       ; Compare register value to other register value
     jr nz, .dont_skip_op
     ; Skip op (program counter += 2)
-    ld a, [program_counter]
-    ld h, a
-    ld a, [program_counter+1]
-    ld l, a
-    inc hl
-    inc hl
-    ld a, h
-    ld [program_counter], a 
-    ld a, l
-    ld [program_counter+1], a
+    advance_program_counter
 .dont_skip_op:
     ld d, $05
     ld d, d ; Debug message
@@ -291,44 +287,11 @@ _8_table:       ; Last 4 bits define operation
 
 
 _9_sne_vx_vy:   ; Skip if Vx != Vy
-    ; Get offset for first register
-    ld a, d ; High byte of opcode into a
-    and $f  ; Get register number from low 4 bits
-    ld c, a ; Save register number in c
-    ; Get offset for second register
-    ld a, e ; Low byte of opcode into a
-    swap a  ; (These two lines are the same as >> 4)
-    and $f  ; Get register number from high 4 bits
-    ld e, a ; Save register number in e
-    ; Get value of first register
-    ld hl, registers
-    ld b, $0
-    add hl, bc ; Registers address + Vx offset
-    ld a, [hl] ; Save register value to c
-    ld c, a
-    ; Get value of second register
-    ld hl, registers
-    ; Get offset of second register in e by >>4
-    ld a, e     
-    swap a
-    and $f
-    ld e, a
-    ld d, $0
-    add hl, de ; Register address + Vy offset
-    ld a, [hl] ; Save register value to a and compare with c
-    cp c       ; Compare register value to other register value
+    call get_registers_xy ; @return e = Vy , @return a = Vx
+    cp e ; Compare registers values
     jr z, .dont_skip_op
     ; Skip op (program counter += 2)
-    ld a, [program_counter]
-    ld h, a
-    ld a, [program_counter+1]
-    ld l, a
-    inc hl
-    inc hl
-    ld a, h
-    ld [program_counter], a 
-    ld a, l
-    ld [program_counter+1], a
+    advance_program_counter
 .dont_skip_op:
     ld d, $09
     ld d, d ; Debug message
@@ -567,31 +530,3 @@ _8xye:  ; Vx <<= 1
     res 0, [hl]
     jr .store_val
 
-
-; @param de -> holds opcode $8xy-
-; @return e -> value of Vy
-; @return a -> value of Vx
-; @return hl -> memory position of register Vx
-get_registers_xy:
-    ; Get value of second register
-    ld hl, registers
-    ; Get offset of second register in e by >>4
-    ld a, e     
-    swap a
-    and $f
-    ld c, a
-    ld b, $0
-    add hl, bc ; Register address + Vy offset
-    ld a, [hl] ; Save register value to e
-    ld e, a
-    ; Get register Vx offset
-    ld a, d ; High byte of opcode into a
-    and $f  ; Get register number from low 4 bits 
-    ld c, a
-    ; Get register address in memory
-    ld hl, registers
-    ld b, $0
-    add hl, bc ; Registers + Vx Offset
-    ; Load value of register to d
-    ld a, [hl] ; Get register value
-    ret
