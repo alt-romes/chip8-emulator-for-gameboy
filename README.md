@@ -1,6 +1,7 @@
 ## CHIP8 Emulator for Gameboy
 
 A chip8 emulator made directly for the gameboy in RGBASM (assembly)
+This is a work in progress, and not yet complete :)
 
 ### Building
 
