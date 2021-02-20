@@ -15,7 +15,6 @@ advance_program_counter: macro
     ld [program_counter], a 
     ld a, l
     ld [program_counter+1], a
-
     endm
 
 ; Gets address of register Vx
@@ -322,12 +321,134 @@ _b_jp_v0_addr:  ; JP to nnn + V0
 
 
 _c_rnd_vx_byte: ; Vx = random byte AND (&) byte(kk)
+    ; TODO: Randomize WRAM in Emulator
+    ret
 
 _d_drw_vx_vy_nibble: ; ??
+    ; TODO:
+    ret
 
 _e_table:
+    get_register_addr_x ; @param d with V index in lower nibble, @return hl with address of Vx
+    ld a, e ; Compare low byte to decide what function to run
+    cp $9E
+    jr nz, ._nextcase
+
+    ; Ex9E
+    ; Skip next instruction if key with value of Vx is pressed
+    ; TODO
+    ret
+
+._nextcase:
+    cp $A1
+    jr nz, ._defaultcase
+
+    ; ExA1
+    ; Skip next instruction if key with value of Vx is NOT pressed
+    ; TODO
+    ret
+
+._defaultcase:
+    ret
 
 _f_table:
+
+    get_register_addr_x ; @param d with V index in lower nibble, @return hl with address of Vx
+    ld a, e ; Compare low byte to decide what function to run
+    cp $07
+    jr nz, ._nextcase
+
+    ; Fx07
+    ; Set Vx to the delay timer value
+    ld a, [delay_register]
+    ld [hl], a ; hl has Vx address
+    ret
+
+._nextcase:
+    cp $0A    
+    jr nz, ._nextcase_
+
+    ; Fx0A
+    ; Wait for a key press, store the value of the key in Vx
+    ; TODO
+    ret
+
+._nextcase_:
+    cp $15
+    jr nz, ._nextcase__
+
+    ; Fx15
+    ; Set delay timer to Vx
+    ld a, [hl] ; hl has Vx
+    ld [delay_register], a
+    ret 
+
+._nextcase__:
+    cp $18
+    jr nz, ._nextcase___
+
+    ; Fx18
+    ; Set sound timer = Vx
+    ld a, [hl] ; hl has Vx address
+    ld [sound_register], a
+    ret
+
+._nextcase___:
+    cp $1E
+    jr nz, ._nextcase____
+
+    ; Fx1E
+    ; I += Vx
+    ld a, [hl] ; Load Vx value to c
+    ld c, a
+    ld a, [i_register+1] ; Load I low byte to a and add Vx to it
+    add c
+    ld [i_register+1], a
+    ld a, [i_register]   ; Get high byte and add carry to it
+    adc $0
+    ld [i_register], a
+    ret
+
+._nextcase____:
+    cp $29
+    jr nz, ._nextcase_____
+
+    ; Fx29
+    ; Set I = Location of the sprite index corresponding to the value of Vx
+    ret
+
+._nextcase_____:
+    cp $33
+    jr nz, ._nextcase______
+
+    ; Fx33
+    ; Store BCD representation of Vx in memory locations specified by value of I, I+1, and I+2.
+    ; TODO
+    ret
+
+._nextcase______:
+    cp $55
+    jr nz, ._nextcase_______
+
+    ; Fx55
+    ; LD [I], Vx - Store registers V0 through Vx in memory starting at location I
+    ; TODO:
+    ret
+
+._nextcase_______:
+    cp $65
+    jr nz, ._defaultcase
+
+    ; Fx65
+    ; LD Vx, [I] - Read registers V0 through Vx from memory starting at location I
+
+._defaultcase:
+    ret 
+
+
+
+
+
 
 
 _8xy0:  ; Ld Vx, Vy (Vx = Vy)
