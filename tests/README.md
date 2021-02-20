@@ -5,23 +5,25 @@
 3) Set print outs in every operation you want debugging info in
 4) Run ROM (for this emulator change `rom.asm` manually)
 
-## Tests Code
+## Tests Bytecode
+
+These were handwritten by me, not too sure why I didn't go ahead and get a compiler
 
 ### JP1 Test
 
+```
 0200: x12 06 * jump to 206
 0202: x00 00
 0204: x00 00
 0206: x00 E0 * print out success
 0208: x00 00 * stop
-
-12060000000000e00000
+```
 
 Expected operations to run: 1xxx 0xe0 stop
 
 
 ### CALL2 and RET00EE Test
-
+```
 0200: x12 04 *jump to 204
 0202: x00 00
 0204: x22 14 * call 214
@@ -33,12 +35,12 @@ Expected operations to run: 1xxx 0xe0 stop
 0210: x00 00
 0212: x00 EE * return
 0214: x12 0A * jump to 20A
-
+```
 Expected ops to run in this order: 1xxx 2xxx 1xxx 1xxx 0xee 0xe0 stop
 
 
 ### LD and SNE and SE
-
+```
 0200: x62 05 * Load: V2 = 5
 0202: x32 05 * Skip next instruction if V2 == 5
 0204: x00 00 * 0000 blocks execution (don't get blocked here)
@@ -52,12 +54,12 @@ Expected ops to run in this order: 1xxx 2xxx 1xxx 1xxx 0xee 0xe0 stop
 0216: x00 00
 0218: x00 E0 * Success
 021A: x00 00 * Stop :)
-
+```
 Expected to run: 6xxx 3xxx 4xxx 6xxx 5xxx 6xxx 9xxx 0xE0 stop 
 
 
 ### ADD7 LD80 OR81 AND82 XOR83
-
+```
 0200: x62 05 * Load: V2 = 5
 0202: x72 03 * Add: V2 += 3
 0204: x32 08 * Skip if V2 == 8
@@ -82,12 +84,12 @@ Expected to run: 6xxx 3xxx 4xxx 6xxx 5xxx 6xxx 9xxx 0xE0 stop
 ----: x00 00
 ----: x00 E0 * 5th Success = XOR83
 ----: x00 00 * Stop
-
+```
 : 6 7 3 00e0 80 5 00e0 6 81 3 00e0 82 3 00e0 6 83 3 00e0 stop
 
 
 ### ADD84 SUB85 SHR86 SHL8E SUBN87
-
+```
 0200: x61 FE * Load V1 = FE
 0202: x62 01 * Load V2 = 1
 ----: x81 24 * V1 += V2 (V1 = FF now)
@@ -141,7 +143,7 @@ Expected to run: 6xxx 3xxx 4xxx 6xxx 5xxx 6xxx 9xxx 0xE0 stop
     : x00 00
     : x00 E0 * 5th Success = SUBN87
     : x00 00 * Stop
-
+```
 :6 6 84 3 84 3 3 00e0 85 3 85 3 3 00e0 86 3 86 3 3 00e0 8E 3 8E 8E 3 3 00e0 87 3 87 3 3 00e0 stop
 
 
