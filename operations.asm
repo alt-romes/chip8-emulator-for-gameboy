@@ -325,36 +325,67 @@ _c_rnd_vx_byte: ; Vx = random byte AND (&) byte(kk)
     ; TODO: Randomize WRAM in Emulator
     ret
 
-_d_drw_vx_vy_nibble: ; ??
+_d_drw_vx_vy_nibble: ; Draw
     ; TODO:
     ret
 
 _e_table:
-    get_register_addr_x ; @param d with V index in lower nibble, @return hl with address of Vx
+
+    ; TODO : NOT WORKING INPUT
+
+    ; Code common to both tables
+    get_register_addr_x ; @return hl with address of Vx
+    ; Get key to check
+    ld a, [hl]
+    ; Get correct location to check bit to see if is pressed
+    ld hl, input_register
+    ; Instead of checking for which input register byte to use, use only 8 inputs
+;     cp $8 ; If the correct bit is in the second byte of the input register, access that byte instead
+;     jr c, .skip_highbyte_offset ; If the bit to access is < 8 skip the next instruction (cp a - 8 will set the carry flag if a < 8) (if bits are 8-15)
+;     add hl, $1  ; hl = input_register + 1
+;     sub $8      ; get correct bit offset in a
+; .skip_highbyte_offset:
+    ; Advance program counter if bit is 0
+    ld c, a ; Store bit value to check later
+
+    ; Decide what function to run
     ld a, e ; Compare low byte to decide what function to run
     cp $9E
     jr nz, ._nextcase
 
     ; Ex9E
     ; Skip next instruction if key with value of Vx is pressed
-    ; TODO
+    ; Check value of bit in input register to see if is pressed
+    ;bit c, [hl]
+    jr nz, .skip_instruction ; Bit is 1 so it is pressed
     ret
 
-._nextcase:
+._nextcase: ; Decide if to run function or run the default case
     cp $A1
     jr nz, ._defaultcase
-
+    
     ; ExA1
     ; Skip next instruction if key with value of Vx is NOT pressed
-    ; TODO
+    ;bit c, [hl] ; Check value of bit in input register to see if is pressed
+    jr z, .skip_instruction ; If the bit is 0 then it's NOT pressed so skip the next instruction
+    ; If it's not just return with the default case below
+
+._defaultcase: ; Default case - just return
     ret
 
-._defaultcase:
+; Code to skip instruction if it should happen
+.skip_instruction:
+    ; Skip instruction
+    advance_program_counter ; macro
     ret
+
 
 _f_table:
 
+    ; Common code
     get_register_addr_x ; @param d with V index in lower nibble, @return hl with address of Vx
+
+    ; Check which function to run
     ld a, e ; Compare low byte to decide what function to run
     cp $07
     jr nz, ._nextcase
@@ -366,12 +397,34 @@ _f_table:
     ret
 
 ._nextcase:
-    cp $0A    
+    cp $0A
     jr nz, ._nextcase_
 
     ; Fx0A
     ; Wait for a key press, store the value of the key in Vx
-    ; TODO
+    xor a   ; a = 0
+    ld b, a ; b = 0
+    ldh [rIF], a ; Clear pending interrupt requests (ldh is used to access FF++)
+    ; Assume that rIE always has VBLANK IRQ enabled
+    ; inc a  ; a = 1
+    ; ldh [rIE], a ; Enable VBLANK IRQ (bit 0 of IE) (VBLANK handler polls for input)
+    ; dec a ; a = 0
+    ld [input_register], a   ; Clear input register and expect any new input TODO: maybe i should just be looking for *new* inputs, not clear them all
+
+.wait:
+    halt ; Wait for VBLANK interrupt
+    ; VBLANK Handler sets input_register with the keys pressed
+    ld a, [input_register]  ; Load value of input register
+    and a       ; Is a == 0?
+    jr z, .wait ; If a is 0 wait more until its > 0 (meaning an input was pressed)
+    ; Input was pressed - multiple can probably be pressed, so just detect the smallest and set it in Vx
+.find_bit:
+    sla a ; Keep shifting right until there's a carry out (meaning we found our bit) - if it's the first one the number is 0
+    inc b ; Everytime we shift we increment b
+    jr nc, .find_bit ; Until we find a bit
+    dec b ; Because b is 1-16 and we want values 0-15
+    ld a, b ; Store value in a and then into Vx
+    ld [hl], a ; HL holds Vx because of the common code for the Fx table - store value of digit there
     ret
 
 ._nextcase_:
@@ -417,7 +470,7 @@ _f_table:
     ; Fx29
     ; Set I = Location of the hexdigit sprite index corresponding to the value of Vx
     ; Get Digit to display
-    get_register_addr_x ; @return hl with address
+    ; hl has address (get_register_x is common code to all)
     ld a, [hl] ; Hexdigit to draw in c
     ld c, a
     ld b, $0   ; bc has digit to draw
@@ -430,9 +483,9 @@ _f_table:
     add hl, bc
     ; Save address in I
     ld a, h
-    ld [i_register], h
+    ld [i_register], a
     ld a, l
-    ld [i_register+1], l
+    ld [i_register+1], a
     ret
 
 ._nextcase_____:
@@ -450,7 +503,13 @@ _f_table:
 
     ; Fx55
     ; LD [I], Vx - Store registers V0 through Vx in memory starting at location I
-    ; TODO:
+    ld de, i_register
+.do_store:
+    ld a, [hld] ; Load value of Vx to A and decrement pointer of Vx by 1 to access V(x-1) later (hl has address of Vx (see common code))
+    ld [de], a ; Store value of Vx in i_register
+    inc de  ; Access next position after I
+    dec bc ; bc has Vx offset
+    jr nc, .do_store ; If bc overflows then we've loaded all Vx through V0
     ret
 
 ._nextcase_______:
@@ -459,13 +518,17 @@ _f_table:
 
     ; Fx65
     ; LD Vx, [I] - Read registers V0 through Vx from memory starting at location I
+    ld de, i_register
+.do_load:
+    ld a, [de] ; Load value of Vx to A and decrement pointer of Vx by 1 to access V(x-1) later (hl has address of Vx (see common code))
+    inc de  ; Access next position after I
+    ld [hld], a ; Store value of Vx in i_register
+    dec bc ; bc has Vx offset
+    jr nc, .do_load ; If bc overflows then we've loaded all Vx through V0
+    ret
 
 ._defaultcase:
     ret 
-
-
-
-
 
 
 

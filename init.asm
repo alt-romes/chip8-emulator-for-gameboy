@@ -40,9 +40,10 @@ START_ADDRESS EQU $200
     or c
     jr nz, .copy_chip8font
 
-
-
-
+    ; Enable VLBANK Interrupts
+    xor a
+    inc a
+    ldh [rIE], a ; Bit 0 enables VBLANK interrupts in the INTERRUPT ENABLE REGISTER
 
     ; The following part is here just for testing for now - It disables LCDC and prepares the font
     

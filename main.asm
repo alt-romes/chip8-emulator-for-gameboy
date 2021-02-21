@@ -5,6 +5,7 @@ include "common.asm"
 include "operations.asm"
 include "rom.asm"
 include "ram.asm"
+include "interrupt_handlers.asm"
 
 section "header", ROM0[$100] ; Memory type ROM0 and the address where the section must be placed ($100)
 
@@ -19,8 +20,11 @@ endr
 
     ; Kill rst vector $30 and replace it with jp hl. Now (rst $30) will do basically (call hl)
 section "rstvectors", ROM0[$30]
-  jp hl
+    jp hl
 
+section "vblank-handler", ROM0[$40]
+    ; VBLANK Handler
+    jp vblank_handler    
 
 section "main", ROM0[$150]
 
@@ -30,9 +34,11 @@ include "init.asm"
 
 .main_loop
 
-    ; --------------------
-    ; Fetch opcode
-    ; --------------------
+    ; Reset the number of cycles left in this frame 
+    ld a, $8
+    ld [cycles_left_in_frame], a ; Run 8 pseudo-cpu cycles every frame, only then halt and wait for VBLANK
+
+.cycle
     ; Get program counter ( 2 bytes )
     ld a, [program_counter] ; Get the first (high) byte of the program counter
     ld b, a ; b has highest byte
@@ -51,7 +57,6 @@ include "init.asm"
     ld d, a
     ld a, [hl]  ; Get lower byte of opcode and store in e
     ld e, a     ; *de* now has the opcode
-
 
     ; Increment program counter by 2 (because each opcode is 2 bytes)
     inc bc
@@ -82,6 +87,14 @@ include "init.asm"
     ; Call the function address stored in (hl) with *de* as the argument for the opcode
     rst $30     ; Same as (call hl) bc of the small hack added in section rstvectors
 
+    ; Keep doing "cpu" cycles or halt and wait for the end of the frame (VBLANK)
+    ld a, [cycles_left_in_frame]
+    dec a ; It will set zero flag if a == 0
+    ld [cycles_left_in_frame], a
+    jr nz, .cycle ; If we have more cycles left this frame, do more cycles
+
+    halt ; Wait for VBLANK (it's the only enabled interrupt)
+         ; VBLANK will process input
 
     ; Set background palette
     ld a, %11100100 ; Palette: 11 10 01 00

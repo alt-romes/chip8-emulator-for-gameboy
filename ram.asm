@@ -25,3 +25,9 @@ stack_pointer:
 stack:
     ds 32   ; Allocate 32 bytes ( 2 * 16 ) for the stack -> 16 positions of 2 bytes (16bits) each
 
+input_register:
+    ;ds 2   ; Allocate 2 bytes (16 bits) to store if any of the 16 keys is pressed
+    ds 1    ; Allocate just 1 byte instead and use only 8 inputs
+
+cycles_left_in_frame:
+    ds 1    ; Allocate 1 byte to store the amount of cycles run this frame
