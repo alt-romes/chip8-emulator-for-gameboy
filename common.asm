@@ -1,3 +1,4 @@
+FONTSET_START_ADDRESS EQU $50
 
 section "common", ROM0
 

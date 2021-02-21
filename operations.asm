@@ -33,6 +33,7 @@ get_register_addr_x: macro
 
 ; Functions
 
+; TODO: Maybe make this a macro to reduce call overhead
 ; Gets value of Vx and Vy and address of Vx:
 ; @param de -> holds opcode $-xy-
 ; @return e -> value of Vy
@@ -103,7 +104,7 @@ _0_table:
     ; 0 op can be $00E0 or $00EE
     ; Check low byte low nibble
     ld a, e
-    and $ff ; If e is 0, stop
+    and a; If e is 0, stop
     jr nz, .not_zero
     stop
 .not_zero:
@@ -414,7 +415,24 @@ _f_table:
     jr nz, ._nextcase_____
 
     ; Fx29
-    ; Set I = Location of the sprite index corresponding to the value of Vx
+    ; Set I = Location of the hexdigit sprite index corresponding to the value of Vx
+    ; Get Digit to display
+    get_register_addr_x ; @return hl with address
+    ld a, [hl] ; Hexdigit to draw in c
+    ld c, a
+    ld b, $0   ; bc has digit to draw
+    ; Calculate offset of digit sprite (every sprite is 5 bytes long)
+    ld hl, FONTSET_START_ADDRESS
+    add hl, bc ; Add digit number offset * 5 times to get actual offset, because each sprite is 5 bytes long
+    add hl, bc
+    add hl, bc
+    add hl, bc
+    add hl, bc
+    ; Save address in I
+    ld a, h
+    ld [i_register], h
+    ld a, l
+    ld [i_register+1], l
     ret
 
 ._nextcase_____:
