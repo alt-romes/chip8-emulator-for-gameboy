@@ -26,3 +26,4 @@ See [testing](https://github.com/alt-romes/chip8-emulator-for-gameboy/tree/maste
 
 * Compiler, Linker and Fixer: [RGBDS](https://rgbds.gbdev.io)
 * Hello World: [ISSOtm's tutorial](https://eldred.fr/gb-asm-tutorial/hello-world.html)
+* Technical Reference: [CHIP-8](http://devernay.free.fr/hacks/chip8/C8TECH10.HTM)
