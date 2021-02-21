@@ -40,10 +40,30 @@ START_ADDRESS EQU $200
     or c
     jr nz, .copy_chip8font
 
+
     ; Enable VLBANK Interrupts
     xor a
     inc a
     ldh [rIE], a ; Bit 0 enables VBLANK interrupts in the INTERRUPT ENABLE REGISTER
+
+
+    ; Set background palette
+    ld a, %11100100 ; Palette: 11 10 01 00
+    ld [rBGP], a
+
+    ; Set scrolling
+    xor a ; same as ld a, 0
+    ld [rSCY], a ; Scroll Y = 0
+    ld [rSCX], a ; Scroll X = 0
+
+    ; Disable sound
+    ld [rNR52], a
+
+    ; Turn screen on, and turn background display on (bit 7 and bit 0)
+    ld a, $81 ; $ identifies hexadecimal, so: 0x81 // 1000 0001
+    ld [rLCDC], a
+
+
 
     ; The following part is here just for testing for now - It disables LCDC and prepares the font
     

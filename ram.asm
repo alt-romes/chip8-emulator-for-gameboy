@@ -27,7 +27,7 @@ stack:
 
 input_register:
     ;ds 2   ; Allocate 2 bytes (16 bits) to store if any of the 16 keys is pressed
-    ds 1    ; Allocate just 1 byte instead and use only 8 inputs
+    ds 1    ; Allocate just 1 byte instead and use only 8 inputs max : Higher nibble is PAD and lower nibble is BUTTONS
 
 cycles_left_in_frame:
     ds 1    ; Allocate 1 byte to store the amount of cycles run this frame

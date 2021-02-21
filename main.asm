@@ -93,24 +93,11 @@ include "init.asm"
     ld [cycles_left_in_frame], a
     jr nz, .cycle ; If we have more cycles left this frame, do more cycles
 
+    ; End cycles this frame
     halt ; Wait for VBLANK (it's the only enabled interrupt)
          ; VBLANK will process input
 
-    ; Set background palette
-    ld a, %11100100 ; Palette: 11 10 01 00
-    ld [rBGP], a
-
-    ; Set scrolling
-    xor a ; same as ld a, 0
-    ld [rSCY], a ; Scroll Y = 0
-    ld [rSCX], a ; Scroll X = 0
-
-    ; Disable sound
-    ld [rNR52], a
-
-    ; Turn screen on, and turn background display on (bit 7 and bit 0)
-    ld a, $81 ; $ identifies hexadecimal, so: 0x81 // 1000 0001
-    ld [rLCDC], a
+    
 
     ; wait sometime (wait for div to overflow)
     ld a, 0
