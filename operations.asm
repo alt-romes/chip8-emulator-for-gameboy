@@ -331,22 +331,28 @@ _d_drw_vx_vy_nibble: ; Draw
 
 _e_table:
 
-    ; TODO : NOT WORKING INPUT
+    ; TODO : CHECK IF WORKING INPUT?
 
     ; Code common to both tables
-    get_register_addr_x ; @return hl with address of Vx
+    ; Get value of inputs in c
+    ld a, [input_register] ; Get input values
+    ld c, a ; Store bit values to check later
     ; Get key to check
-    ld a, [hl]
+    get_register_addr_x ; @return hl with address of Vx
+    ld a, [hl] ; Get Value of Vx
+    cp $8 ; All Vx values above 7 need to be normalized ; TODO: This behaviour is a bit undefined bc i don't know if the keys can be mirrored like this
+    jr c, .shift_until_value ; If a < 8 dont normalize and go directly to shifting
+    ; Normalize 8-15 to 0-7
+    sub $8
     ; Get correct location to check bit to see if is pressed
-    ld hl, input_register
-    ; Instead of checking for which input register byte to use, use only 8 inputs
-;     cp $8 ; If the correct bit is in the second byte of the input register, access that byte instead
-;     jr c, .skip_highbyte_offset ; If the bit to access is < 8 skip the next instruction (cp a - 8 will set the carry flag if a < 8) (if bits are 8-15)
-;     add hl, $1  ; hl = input_register + 1
-;     sub $8      ; get correct bit offset in a
-; .skip_highbyte_offset:
-    ; Advance program counter if bit is 0
-    ld c, a ; Store bit value to check later
+.shift_until_value:
+    and $f ; Check if Vx value is 0
+    jr z, .check_input_value
+    srl c ; c has value of input_register, shift until the desired bit is in position 0
+    dec a ; a has value of Vx decreasing until 0 to place the input bit we want to check in the rightmost position
+    jr .shift_until_value
+.check_input_value:
+    ; C has the input bit we want to check in the rightmost position. Decide which function to run and then check that bit to skip the instruction
 
     ; Decide what function to run
     ld a, e ; Compare low byte to decide what function to run
@@ -355,8 +361,8 @@ _e_table:
 
     ; Ex9E
     ; Skip next instruction if key with value of Vx is pressed
-    ; Check value of bit in input register to see if is pressed
-    ;bit c, [hl]
+    ld a, c ; C has the input bit we want to check
+    and $1 ; Check rightmost bit
     jr nz, .skip_instruction ; Bit is 1 so it is pressed
     ret
 
@@ -366,9 +372,10 @@ _e_table:
     
     ; ExA1
     ; Skip next instruction if key with value of Vx is NOT pressed
-    ;bit c, [hl] ; Check value of bit in input register to see if is pressed
+    ld a, c ; C has the input bit we want to check
+    and $1 ; Check rightmost bit
     jr z, .skip_instruction ; If the bit is 0 then it's NOT pressed so skip the next instruction
-    ; If it's not just return with the default case below
+    ; If it's not just fallthrough to return with the default case below
 
 ._defaultcase: ; Default case - just return
     ret

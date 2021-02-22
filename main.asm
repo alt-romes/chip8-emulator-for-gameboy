@@ -96,17 +96,9 @@ include "init.asm"
     ; End cycles this frame
     halt ; Wait for VBLANK (it's the only enabled interrupt)
          ; VBLANK will process input
-
     
-
-    ; wait sometime (wait for div to overflow)
-    ld a, 0
-    ld [rDIV], a ; Write to div to set it to zero
-.wait_for_div:
-    ld a, [rDIV]
-    cp 10       ; Wait for DIV full cycle
-    jp nz, .wait_for_div
-
+    ; Put sprite data in VRAM
+    
 
     jp .main_loop
 
