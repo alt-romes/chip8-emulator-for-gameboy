@@ -6,7 +6,9 @@ chip8_rom:
 ;incbin "tests/call2_and_ret00ee_test.ch8"
 ;incbin "tests/ld_se_sne_34569_test.ch8"
 ;incbin "tests/add7_ld80_or81_and82_xor83_test.ch8"
-incbin "tests/add84_sub85_shr86_shl8e_subn87_test.ch8"
+;incbin "tests/add84_sub85_shr86_shl8e_subn87_test.ch8"
+;incbin "roms/Cave.ch8"
+incbin "roms/pong.rom"
 chip8_rom_end:
 
 chip8_font:

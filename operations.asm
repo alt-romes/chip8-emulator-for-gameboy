@@ -323,10 +323,95 @@ _b_jp_v0_addr:  ; JP to nnn + V0
 
 _c_rnd_vx_byte: ; Vx = random byte AND (&) byte(kk)
     ; TODO: Randomize WRAM in Emulator
+    
     ret
 
 _d_drw_vx_vy_nibble: ; Draw
+
+    ; Dxyn - DRW Vx, Vy, nibble
+    ; Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision.
+
     ; TODO:
+    ; Save size of sprite in b
+    ld a, e
+    and $f
+    ld b, a
+
+    call get_registers_xy ; @return e value of Vy, @return a value of Vx, @return hl address of Vx
+
+    ; Get address where to draw
+    ld hl, _VRAM8800
+    ; Divide Vx by 8 to get tile value (snap to grid) and multiply by 16 to get tile byte offset: which is the same as multiplying by 2
+    sla a
+    ; HL = _VRAM8800 + Vx Offset
+    add l
+    ld l, a
+    ld a, 0 ; a = 0 without changing carry
+    adc h ; a = h + carry
+    ld h, a
+
+    ; Calculate Vy offset
+    ld a, e
+    ; Get Y row offset by dividing by 8, get tile offset from start by multiplying row offset by number of tiles per row (x8) and then multiply by 16 to get byte offset: basically multiply by 16 = <<4
+    sla a
+    sla a
+    sla a
+    sla a
+    ; HL = _VRAM8800 + Vx offset + Y rows offset
+    add l
+    ld l, a
+    ld a, 0 ; a = 0 without changing carry
+    adc h
+    ld h, a
+
+    ; Get correct offset inside tile
+    ld a, e ; a = Vy
+    and $f  ; a = a % 8
+    sla a   ; a *= 2 to get bytes offset
+    ; HL = VRAM final address
+    add l
+    ld l, a
+    ld a, 0 ; a = 0 without changing carry
+    adc h
+    ld h, a
+
+    ld d, e ; Save original Vy value in d
+    srl e
+    srl e
+    srl e ; Divide e = Vy by 8 to get Y row offset in E
+
+    ld bc, i_register
+
+    ; Draw Addr = Base + Vx >> 3 * 2 + Vy >> 3 * 8 * 16 + Vy % 8 * 2
+
+    halt ; It will halt until VBLANK bc it's the only enabled interrupt
+
+.load_data:
+    ld a, [bc]
+    inc bc
+    ld [hli], a
+    ld [hli], a ; Set two bytes equal to the value of the chip8 sprite byte, since gameboy uses 2 bit colors instead of 1
+    dec d   ; D has size, dec until loaded all of the sprite
+    jr z, .continue ; Stop when size has been used
+    ld a, d ; d has Vy Y
+    inc a   ; going to draw next y line
+    srl a
+    srl a
+    srl a   ; Divide a by 8
+    cp e    ; Has the offset changed ? If so we must add 8 * 16 more bytes to the VRAM offset :: If not, continue loading data
+    jr z, .load_data
+    ; If the offset changed, load new offset number in e, and add a row of bytes to the offset and set the pointer to the top of the tile again by subtracting 16 (so just multiply by 14)
+    ld e, a
+    ld a, 8*14
+    add l
+    ld l, a
+    ld a, $0
+    adc h
+    ld h, a
+    jr .load_data
+
+.continue
+
     ret
 
 _e_table:

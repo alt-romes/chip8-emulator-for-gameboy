@@ -59,10 +59,18 @@ START_ADDRESS EQU $200
     ; Disable sound
     ld [rNR52], a
 
+    ; Set tilemap to 0 1 2 3 4 5 6 7 8 9 ... to use the tiles in its order
+.fill_tilemap:
+    ld hl, _SCRN0 ; hl = 9800 (background tilemap)
+    xor a ; a = 0
+    ld [hli], a
+    inc a
+    cp 128 ; while a < 128 loop
+    jr c, .fill_tilemap
+
     ; Turn screen on, and turn background display on (bit 7 and bit 0)
     ld a, $81 ; $ identifies hexadecimal, so: 0x81 // 1000 0001
     ld [rLCDC], a
-
 
 
     ; The following part is here just for testing for now - It disables LCDC and prepares the font
