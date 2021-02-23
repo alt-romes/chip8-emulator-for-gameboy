@@ -31,3 +31,6 @@ input_register:
 
 cycles_left_in_frame:
     ds 1    ; Allocate 1 byte to store the amount of cycles run this frame
+
+a_counter:
+    ds 1    ; Allocate 1 byte to use as a counter in the program

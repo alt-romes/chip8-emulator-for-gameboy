@@ -29,7 +29,7 @@ section "vblank-handler", ROM0[$40]
 section "main", ROM0[$150]
 
 start:
-    
+
 include "init.asm"
 
 .main_loop
@@ -87,6 +87,7 @@ include "init.asm"
     ; Call the function address stored in (hl) with *de* as the argument for the opcode
     rst $30     ; Same as (call hl) bc of the small hack added in section rstvectors
 
+
     ; Keep doing "cpu" cycles or halt and wait for the end of the frame (VBLANK)
     ld a, [cycles_left_in_frame]
     dec a ; It will set zero flag if a == 0
@@ -98,7 +99,6 @@ include "init.asm"
          ; VBLANK will process input
     
     ; Put sprite data in VRAM
-    
 
     jp .main_loop
 

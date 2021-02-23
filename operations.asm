@@ -189,8 +189,8 @@ _2_call_addr:
     ld [program_counter], a ; High byte is set first
     ld a, e ; get low byte
     ld [program_counter+1], a ; Set low byte next
-    ld d, $02
-    ld d, d ; Debug message
+    ; ld d, $02
+    ; ld d, d ; Debug message
     ret ; Return and continue execution
 
 
@@ -241,8 +241,8 @@ _6_ld_vx_byte:  ; Vx = byte
     ; Load byte to register
     ld a, e ; Byte is in e
     ld [hl], a ; Save new value in Vx
-    ld d, $06
-    ld d, d ; Debug message
+    ; ld d, $06
+    ; ld d, d ; Debug message
     ret
 
 
@@ -301,8 +301,8 @@ _a_ld_i_addr:   ; I = nnn
     ld [i_register], a
     ld a, e
     ld [i_register+1], a ; Set low byte of opcode in low byte of I register
-    ld d, $0a
-    ld d, d ; Debug message
+    ; ld d, $0a
+    ; ld d, d ; Debug message
     ret
 
 
@@ -323,7 +323,9 @@ _b_jp_v0_addr:  ; JP to nnn + V0
 
 _c_rnd_vx_byte: ; Vx = random byte AND (&) byte(kk)
     ; TODO: Randomize WRAM in Emulator
-    
+
+    ld d, $c ; Debug
+    ld d, d
     ret
 
 _d_drw_vx_vy_nibble: ; Draw
@@ -332,16 +334,19 @@ _d_drw_vx_vy_nibble: ; Draw
     ; Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision.
 
     ; TODO:
-    ; Save size of sprite in b
+    ; Save size of sprite in d
     ld a, e
     and $f
-    ld b, a
+    ld d, a
 
     call get_registers_xy ; @return e value of Vy, @return a value of Vx, @return hl address of Vx
 
     ; Get address where to draw
     ld hl, _VRAM8800
-    ; Divide Vx by 8 to get tile value (snap to grid) and multiply by 16 to get tile byte offset: which is the same as multiplying by 2
+    ; Divide Vx by 8 to get tile value (snap to grid) and multiply by 16 to get tile byte offset
+    srl a
+    srl a
+    srl a
     sla a
     ; HL = _VRAM8800 + Vx Offset
     add l
@@ -353,6 +358,15 @@ _d_drw_vx_vy_nibble: ; Draw
     ; Calculate Vy offset
     ld a, e
     ; Get Y row offset by dividing by 8, get tile offset from start by multiplying row offset by number of tiles per row (x8) and then multiply by 16 to get byte offset: basically multiply by 16 = <<4
+    ; / 8
+    srl a
+    srl a
+    srl a
+    ; * 8
+    sla a
+    sla a
+    sla a
+    ; * 16
     sla a
     sla a
     sla a
@@ -366,7 +380,7 @@ _d_drw_vx_vy_nibble: ; Draw
 
     ; Get correct offset inside tile
     ld a, e ; a = Vy
-    and $f  ; a = a % 8
+    and $7  ; a = a % 8
     sla a   ; a *= 2 to get bytes offset
     ; HL = VRAM final address
     add l
@@ -375,34 +389,50 @@ _d_drw_vx_vy_nibble: ; Draw
     adc h
     ld h, a
 
-    ld d, e ; Save original Vy value in d
-    srl e
-    srl e
-    srl e ; Divide e = Vy by 8 to get Y row offset in E
+
+    ; DE has d = size, e = y
+    ld a, d
+    ld [a_counter], a ; Save sprite size in counter
+    xor a
+    ld d, a ; D is now the number of lines drawn
+    ; E has original Vy value
 
     ld bc, i_register
 
-    ; Draw Addr = Base + Vx >> 3 * 2 + Vy >> 3 * 8 * 16 + Vy % 8 * 2
+    ; Draw Addr = Base + Vx >> 3 * 16 + Vy >> 3 * 8 * 16 + Vy % 8 * 2
 
     halt ; It will halt until VBLANK bc it's the only enabled interrupt
 
+
 .load_data:
-    ld a, [bc]
+    ; DE has D = Lines drawn, E = Vy
+    push de ; Store these values
+    ld a, [bc] ; Get byte from source (bc = i_register + offset)
     inc bc
-    ld [hli], a
+    ld e, a  ; Byte from source in e
+    ld a, [hli] ; Current screen value
+    xor e    ; Xor with byte from source
+    ld [hl], a ; Store it after XOR ( this is how the chip8 works screen = source ^ source)
+    ; Assume the second byte had the same value as well because they should
     ld [hli], a ; Set two bytes equal to the value of the chip8 sprite byte, since gameboy uses 2 bit colors instead of 1
-    dec d   ; D has size, dec until loaded all of the sprite
+    pop de ; Use values again
+    inc d ; Lines_drawn++
+    ld a, [a_counter]
+    dec a ; Drawed a line, keep drawing until all were drawn
+    ld [a_counter], a
     jr z, .continue ; Stop when size has been used
-    ld a, d ; d has Vy Y
-    inc a   ; going to draw next y line
-    srl a
-    srl a
-    srl a   ; Divide a by 8
-    cp e    ; Has the offset changed ? If so we must add 8 * 16 more bytes to the VRAM offset :: If not, continue loading data
-    jr z, .load_data
+    ; Has the offset changed ? If so we must add 8 * 16 more bytes to the VRAM offset :: If not, continue loading data
+
+    ; Condition to change offset (y + linesdrawn != 0) && (y+linesdrawn % 8) == 0
+    ld a, e ; a = Vy value
+    add d   ; y + lines drawn != 0?
+    jr z, .load_data ; if it's 0 continue loading, else if
+    and $7 ; y+linesdrawn % 8
+    jr nz, .load_data ; if it's 0 keep going to add the offset
+
     ; If the offset changed, load new offset number in e, and add a row of bytes to the offset and set the pointer to the top of the tile again by subtracting 16 (so just multiply by 14)
-    ld e, a
     ld a, 8*14
+    ; Add offset to HL
     add l
     ld l, a
     ld a, $0
@@ -411,7 +441,8 @@ _d_drw_vx_vy_nibble: ; Draw
     jr .load_data
 
 .continue
-
+    ld d, $d ; Debug
+    ld d, d
     ret
 
 _e_table:

@@ -1,6 +1,8 @@
 section "interrupt_handlers", ROM0
 
 vblank_handler:
+    ld d, $ff
+    ld d, d
     ; Handle input every frame - store in observed value in input_register of chip8
     ld a, P1F_GET_BTN ; Set bit 4 of JOYP to 1 and 5 to 0 to get buttons
     ldh [rP1], a ; Set values in Joypad register
