@@ -323,7 +323,7 @@ _b_jp_v0_addr:  ; JP to nnn + V0
     ld a, $0 ; Can't do xor because it would reset the flags
     adc d    ; Add upper byte
     and $f   ; clear upper 4 bits (even if there were more, because the address space ends in xFFF)
-    ld [program_counter+1], a ; Set low byte next
+    ld [program_counter], a ; Set low byte next
     ld d, $0b
     ld d, d ; Debug message
     ret ; Return and continue execution
@@ -661,7 +661,7 @@ _f_table:
     ld [bc], a ; Store value of Vx in i_register
     inc bc  ; Access next position after I
     dec d ; d has Vx index going until 0
-    jr nz, .do_store ; If bc overflows then we've loaded all Vx through V0
+    jr nc, .do_store ; If bc overflows then we've loaded all Vx through V0
     ret
 
 ._nextcase_______:

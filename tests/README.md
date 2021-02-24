@@ -156,6 +156,14 @@ Expected: 5 successes
 0210: x00 00 ; in runtime this should be = x120c to jump to 20C
 0212: x00 00
 ```
-Expected: one success
+Expected: 1 success
 
-### 
+### B (JP nnn+V0)
+```
+0200: x60 04 ; V0 = 2
+0202: xB2 02 ; Jump to 202 + (V0=4) = 206
+0204: x00 00
+0206: x00 E0 ; Success
+0208: x00 00 ; Stop :)
+```
+Expected: 1 success
