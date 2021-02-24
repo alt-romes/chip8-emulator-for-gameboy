@@ -48,7 +48,7 @@ START_ADDRESS EQU $200
 
 
     ; Set background palette
-    ld a, %11100100 ; Palette: 11 10 01 00
+    ld a, %00011011; Palette: (3)=00 (2)=01 (1)=10 (0)=11
     ld [rBGP], a
 
     ; Set scrolling
@@ -59,19 +59,45 @@ START_ADDRESS EQU $200
     ; Disable sound
     ld [rNR52], a
 
-    ; Finally disable the display
     ; Wait for vblank to fill tilemap
 
     halt
 
+    ; Disable LCD to access vram
+    xor a; Set a to 0
+    ld [rLCDC], a ; Set LCDC to 0, this will disable bit 7, consequently it will disable the display
+
+    ld b, b ; debug
+
+    ; Access VRAM now that it's disabled
+
+    ; Tile Data is stored in VRAM at addresses $8000-97FF; with one tile being 16 bytes large, this area defines data for 384 Tiles
+    ; Clear the tileset completely
+    ld hl, _VRAM8000
+    ld de, 384*16 ; 32 tiles x 32 tiles with 16 bytes each
+.clear_tiles:
+    xor a
+    ld [hli], a ; set to 0
+    dec de
+    ld a, d
+    or e ; is de == 0?
+    jr nz, .clear_tiles ; while de isn't zero keep zeroing tileset
+
     ; Set tilemap to 0 1 2 3 4 5 6 7 8 9 ... to use the tiles in its order
     ld hl, _SCRN0 ; hl = 9800 (background tilemap)
-    ; a = 0
-    ;ld d, a ; d = 0
+    xor a
 .fill_tilemap:
     ld [hli], a
     inc a
-    cp 128 ; while a < 128 loop
+    ld d, a ; store a value in d
+    and $7  ; a % 8
+    jr nz, .dont_add_offset
+    ; If a % 8 == 0, add 12 to hl to offset the chip8 display correctly (each row has 8 tiles of chip8 and 24 tiles of nothing)
+    ld bc, 24
+    add hl, bc ; hl += 24
+.dont_add_offset:
+    ld a, d ; unstore value from d
+    cp 32; while a < 32 (number of chip8 tiles) keep placing them
     jr c, .fill_tilemap
 
     ; Turn screen on, and turn background display on (bit 7 and bit 0)

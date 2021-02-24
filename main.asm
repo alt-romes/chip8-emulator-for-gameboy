@@ -20,6 +20,7 @@ endr
 
     ; Kill rst vector $30 and replace it with jp hl. Now (rst $30) will do basically (call hl)
 section "rstvectors", ROM0[$30]
+    ld b, b ; debug
     jp hl
 
 section "vblank-handler", ROM0[$40]

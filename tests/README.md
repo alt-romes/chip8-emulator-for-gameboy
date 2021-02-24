@@ -18,8 +18,7 @@ These were handwritten by me, not too sure why I didn't go ahead and get a compi
 0206: x00 E0 * print out success
 0208: x00 00 * stop
 ```
-
-Expected operations to run: 1xxx 0xe0 stop
+Expected: 1 success
 
 
 ### CALL2 and RET00EE Test
@@ -36,7 +35,7 @@ Expected operations to run: 1xxx 0xe0 stop
 0212: x00 EE * return
 0214: x12 0A * jump to 20A
 ```
-Expected ops to run in this order: 1xxx 2xxx 1xxx 1xxx 0xee 0xe0 stop
+Expected: 1 success
 
 
 ### LD and SNE and SE
@@ -55,8 +54,7 @@ Expected ops to run in this order: 1xxx 2xxx 1xxx 1xxx 0xee 0xe0 stop
 0218: x00 E0 * Success
 021A: x00 00 * Stop :)
 ```
-Expected to run: 6xxx 3xxx 4xxx 6xxx 5xxx 6xxx 9xxx 0xE0 stop 
-
+Expected: 1 success
 
 ### ADD7 LD80 OR81 AND82 XOR83
 ```
@@ -85,8 +83,7 @@ Expected to run: 6xxx 3xxx 4xxx 6xxx 5xxx 6xxx 9xxx 0xE0 stop
 ----: x00 E0 * 5th Success = XOR83
 ----: x00 00 * Stop
 ```
-: 6 7 3 00e0 80 5 00e0 6 81 3 00e0 82 3 00e0 6 83 3 00e0 stop
-
+Expected: 5 successes
 
 ### ADD84 SUB85 SHR86 SHL8E SUBN87
 ```
@@ -144,7 +141,21 @@ Expected to run: 6xxx 3xxx 4xxx 6xxx 5xxx 6xxx 9xxx 0xE0 stop
     : x00 E0 * 5th Success = SUBN87
     : x00 00 * Stop
 ```
-:6 6 84 3 84 3 3 00e0 85 3 85 3 3 00e0 86 3 86 3 3 00e0 8E 3 8E 8E 3 3 00e0 87 3 87 3 3 00e0 stop
+Expected: 5 successes
 
+### A, Fx55, Fx65
+```
+0200: xA2 10 ; Load 210 to I
+0202: x60 12 ; Ld V0 = x12
+0204: x61 0c ; Ld V1 = x0c, V0V1 = x12 0c = jump to 20c
+0206: xF1 55 ; Load V0 through V1 to [I]
+0208: x12 10 ; Jump to position where I should be pointing to, with the instructions we loaded there
+020a: x00 00 ;
+020c: x00 E0 ; Success
+020e: x00 00 ; Stop :)
+0210: x00 00 ; in runtime this should be = x120c to jump to 20C
+0212: x00 00
+```
+Expected: one success
 
 ### 

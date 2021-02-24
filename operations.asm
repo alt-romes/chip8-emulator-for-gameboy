@@ -139,6 +139,9 @@ _0_table:
 ._00E0_CLS: ; Clear Screen
 
     ; TODO: Clear screen
+    ; Disable LCD to access vram
+    xor a; Set a to 0
+    ld [rLCDC], a ; Set LCDC to 0, this will disable bit 7, consequently it will disable the display
 
     ; The font tiles are now set, now we write the tilemap
     ld hl, $9800 ; this will print the string at the top left corner of the screen
@@ -151,6 +154,11 @@ _0_table:
     jr nz, .copy_string ; Continue if it's not
     ld d, $00
     ld d, d ; Debug message
+
+    ; Turn screen on, and turn background display on (bit 7 and bit 0)
+    ld a, $81 ; $ identifies hexadecimal, so: 0x81 // 1000 0001
+    ld [rLCDC], a
+
     ret ; Return to execution
 
 
@@ -403,6 +411,9 @@ _d_drw_vx_vy_nibble: ; Draw
 
     halt ; It will halt until VBLANK bc it's the only enabled interrupt
 
+    ; Disable LCDC to access VRAM
+    xor a
+    ld [rLCDC], a
 
 .load_data:
     ; DE has D = Lines drawn, E = Vy
@@ -443,6 +454,10 @@ _d_drw_vx_vy_nibble: ; Draw
 .continue
     ld d, $d ; Debug
     ld d, d
+
+    ; Re-enable LCDC
+    ld a, $81 ; $ identifies hexadecimal, so: 0x81 // 1000 0001
+    ld [rLCDC], a
     ret
 
 _e_table:
@@ -626,13 +641,27 @@ _f_table:
 
     ; Fx55
     ; LD [I], Vx - Store registers V0 through Vx in memory starting at location I
-    ld de, i_register
+    ; Get memory referenced by I in bc
+    ld hl, memory ; bc will have chip8 memory address 
+    ld a, [i_register+1]
+    ld c, a
+    ld a, [i_register]
+    ld b, a
+    add hl, bc
+    ld c, l
+    ld b, h
+
+    ld hl, registers
+    ld a, d
+    and $f ; Get Vx index
+    inc a ; increment by one because Vx is including Vx
+    ld d, a
 .do_store:
-    ld a, [hld] ; Load value of Vx to A and decrement pointer of Vx by 1 to access V(x-1) later (hl has address of Vx (see common code))
-    ld [de], a ; Store value of Vx in i_register
-    inc de  ; Access next position after I
-    dec bc ; bc has Vx offset
-    jr nc, .do_store ; If bc overflows then we've loaded all Vx through V0
+    ld a, [hli] ; Load value of Vx to A and decrement pointer of Vx by 1 to access V(x-1) later (hl has address of Vx (see common code))
+    ld [bc], a ; Store value of Vx in i_register
+    inc bc  ; Access next position after I
+    dec d ; d has Vx index going until 0
+    jr nz, .do_store ; If bc overflows then we've loaded all Vx through V0
     ret
 
 ._nextcase_______:
@@ -641,13 +670,28 @@ _f_table:
 
     ; Fx65
     ; LD Vx, [I] - Read registers V0 through Vx from memory starting at location I
-    ld de, i_register
+
+    ; Get memory referenced by I in bc
+    ld hl, memory ; bc will have chip8 memory address 
+    ld a, [i_register+1]
+    ld c, a
+    ld a, [i_register]
+    ld b, a
+    add hl, bc
+    ld c, l
+    ld b, h
+
+    ld hl, registers
+    ld a, d
+    and $f ; Get Vx index
+    inc a ; increment by one because Vx is including Vx
+    ld d, a
 .do_load:
-    ld a, [de] ; Load value of Vx to A and decrement pointer of Vx by 1 to access V(x-1) later (hl has address of Vx (see common code))
-    inc de  ; Access next position after I
-    ld [hld], a ; Store value of Vx in i_register
-    dec bc ; bc has Vx offset
-    jr nc, .do_load ; If bc overflows then we've loaded all Vx through V0
+    ld a, [bc] ; Load value of Vx to A and inc pointer of Vx by 1 to access V(x+1) late
+    inc bc ; Access next position after I
+    ld [hli], a ; Store value of Vx in i_register
+    dec d ; d has Vx index going to 0
+    jr nz, .do_load ; If bc overflows then we've loaded all Vx through V0
     ret
 
 ._defaultcase:
