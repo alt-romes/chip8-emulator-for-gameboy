@@ -143,7 +143,7 @@ Expected: 5 successes
 ```
 Expected: 5 successes
 
-### A, Fx55, Fx65
+### A, Fx55
 ```
 0200: xA2 10 ; Load 210 to I
 0202: x60 12 ; Ld V0 = x12
@@ -165,5 +165,20 @@ Expected: 1 success
 0204: x00 00
 0206: x00 E0 ; Success
 0208: x00 00 ; Stop :)
+```
+Expected: 1 success
+
+### Fx1E, Fx29, Fx65
+```
+0200: xA2 04 ; Load 204 to I
+0202: x60 02 ; V0 = 2
+0204: xF0 1E ; I += V0 (= 206)
+0206: xF1 65 ; V0 = I[0] = F1, V1 = I[1] = 65
+0208: x30 F1 ; If V0 == F1 skip next (F1 is referenced by I)
+020a: x00 00
+020c: x31 65 ; If V1 == 65 skip next (65 is referenced by I+1)
+020e: x00 00
+0210: x00 E0 ; Success
+0212: x00 00 ; Stop
 ```
 Expected: 1 success
