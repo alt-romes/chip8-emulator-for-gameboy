@@ -9,10 +9,10 @@ chip8_rom:
 ;incbin "tests/add84_sub85_shr86_shl8e_subn87_test.ch8"
 ;incbin "tests/a_fx55_test.ch8"
 ;incbin "tests/b_test.ch8"
-incbin "tests/fx1e_fx29_fx65_test.ch8"
+;incbin "tests/fx1e_fx29_fx65_test.ch8"
 ;incbin "roms/Cave.ch8"
 ;incbin "roms/pong.rom"
-;incbin "test_opcode.ch8"
+incbin "test_opcode.ch8"
 chip8_rom_end:
 
 chip8_font:

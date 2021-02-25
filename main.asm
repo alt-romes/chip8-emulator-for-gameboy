@@ -98,11 +98,25 @@ include "init.asm"
     ; End cycles this frame
     halt ; Wait for VBLANK (it's the only enabled interrupt)
          ; VBLANK will process input
-    
+
+    ld a, [sound_register]
+    and a ; If it's not zero decrement
+    jr z, .dont_decrement_first_timer
+    dec a
+    ld [sound_register], a
+
+.dont_decrement_first_timer:
+    ; Decrement sound register
+    ld a, [delay_register]
+    and a ; If it's not zero decrement
+    jr z, .dont_decrement_timer
+    dec a
+    ld [delay_register], a
+
+.dont_decrement_timer:
     ; Put sprite data in VRAM
 
     jp .main_loop
-
 
 
 section "font", ROM0

@@ -36,6 +36,7 @@ get_register_addr_x: macro
 ; TODO: Maybe make this a macro to reduce call overhead
 ; Gets value of Vx and Vy and address of Vx:
 ; @param de -> holds opcode $-xy-
+; @uses bc
 ; @return e -> value of Vy
 ; @return a -> value of Vx
 ; @return hl -> memory position of register Vx
@@ -341,11 +342,8 @@ _d_drw_vx_vy_nibble: ; Draw
     ; Dxyn - DRW Vx, Vy, nibble
     ; Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision.
 
-    ; TODO:
-    ; Save size of sprite in d
-    ld a, e
-    and $f
-    ld d, a
+    ; Save size of sprite
+    push de
 
     call get_registers_xy ; @return e value of Vy, @return a value of Vx, @return hl address of Vx
 
@@ -362,6 +360,12 @@ _d_drw_vx_vy_nibble: ; Draw
     ld a, 0 ; a = 0 without changing carry
     adc h ; a = h + carry
     ld h, a
+
+    ; Save sprite size in d
+    pop bc
+    ld a, c
+    and $f
+    ld d, a
 
     ; Calculate Vy offset
     ld a, e
@@ -397,6 +401,8 @@ _d_drw_vx_vy_nibble: ; Draw
     adc h
     ld h, a
 
+    push hl ; Save HL = VRAM final address
+
 
     ; DE has d = size, e = y
     ld a, d
@@ -405,7 +411,16 @@ _d_drw_vx_vy_nibble: ; Draw
     ld d, a ; D is now the number of lines drawn
     ; E has original Vy value
 
-    ld bc, i_register
+    ld bc, memory ; bc will have &memory[*i_register]
+    ld hl, i_register
+    ld a, [i_register+1] ; Add low byte of i_register to memory address
+    add c
+    ld c, a
+    ld a, [i_register]   ; Add high bytew to memory address
+    adc b
+    ld b, a
+
+    pop hl ; Restore HL = VRAM final address
 
     ; Draw Addr = Base + Vx >> 3 * 16 + Vy >> 3 * 8 * 16 + Vy % 8 * 2
 
@@ -418,10 +433,10 @@ _d_drw_vx_vy_nibble: ; Draw
 .load_data:
     ; DE has D = Lines drawn, E = Vy
     push de ; Store these values
-    ld a, [bc] ; Get byte from source (bc = i_register + offset)
+    ld a, [bc] ; Get byte from source (bc = &memory[*i_register] + offset)
     inc bc
     ld e, a  ; Byte from source in e
-    ld a, [hli] ; Current screen value
+    ld a, [hl] ; Current screen value
     xor e    ; Xor with byte from source
     ld [hl], a ; Store it after XOR ( this is how the chip8 works screen = source ^ source)
     ; Assume the second byte had the same value as well because they should
@@ -657,8 +672,8 @@ _f_table:
     inc a ; increment by one because Vx is including Vx
     ld d, a
 .do_store:
-    ld a, [hli] ; Load value of Vx to A and decrement pointer of Vx by 1 to access V(x-1) later (hl has address of Vx (see common code))
-    ld [bc], a ; Store value of Vx in i_register
+    ld a, [hli]
+    ld [bc], a
     inc bc  ; Access next position after I
     dec d ; d has Vx index going until 0
     jr nc, .do_store ; If bc overflows then we've loaded all Vx through V0
