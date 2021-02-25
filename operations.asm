@@ -348,13 +348,13 @@ _d_drw_vx_vy_nibble: ; Draw
     call get_registers_xy ; @return e value of Vy, @return a value of Vx, @return hl address of Vx
 
     ; Get address where to draw
-    ld hl, _VRAM8800
+    ld hl, _VRAM9000
     ; Divide Vx by 8 to get tile value (snap to grid) and multiply by 16 to get tile byte offset
     srl a
     srl a
     srl a
     sla a
-    ; HL = _VRAM8800 + Vx Offset
+    ; HL = _VRAM9000 + Vx Offset
     add l
     ld l, a
     ld a, 0 ; a = 0 without changing carry
@@ -383,7 +383,7 @@ _d_drw_vx_vy_nibble: ; Draw
     sla a
     sla a
     sla a
-    ; HL = _VRAM8800 + Vx offset + Y rows offset
+    ; HL = _VRAM9000 + Vx offset + Y rows offset
     add l
     ld l, a
     ld a, 0 ; a = 0 without changing carry
@@ -399,9 +399,7 @@ _d_drw_vx_vy_nibble: ; Draw
     ld l, a
     ld a, 0 ; a = 0 without changing carry
     adc h
-    ld h, a
-
-    push hl ; Save HL = VRAM final address
+    ld h, a ; HL = VRAM final address
 
 
     ; DE has d = size, e = y
@@ -412,15 +410,12 @@ _d_drw_vx_vy_nibble: ; Draw
     ; E has original Vy value
 
     ld bc, memory ; bc will have &memory[*i_register]
-    ld hl, i_register
     ld a, [i_register+1] ; Add low byte of i_register to memory address
     add c
     ld c, a
     ld a, [i_register]   ; Add high bytew to memory address
     adc b
     ld b, a
-
-    pop hl ; Restore HL = VRAM final address
 
     ; Draw Addr = Base + Vx >> 3 * 16 + Vy >> 3 * 8 * 16 + Vy % 8 * 2
 
@@ -438,7 +433,7 @@ _d_drw_vx_vy_nibble: ; Draw
     ld e, a  ; Byte from source in e
     ld a, [hl] ; Current screen value
     xor e    ; Xor with byte from source
-    ld [hl], a ; Store it after XOR ( this is how the chip8 works screen = source ^ source)
+    ld [hli], a ; Store it after XOR ( this is how the chip8 works screen = source ^ source)
     ; Assume the second byte had the same value as well because they should
     ld [hli], a ; Set two bytes equal to the value of the chip8 sprite byte, since gameboy uses 2 bit colors instead of 1
     pop de ; Use values again
