@@ -12,7 +12,7 @@ chip8_rom:
 ;incbin "tests/fx1e_fx29_fx65_test.ch8"
 ;incbin "roms/Cave.ch8"
 ;incbin "roms/pong.rom"
-incbin "test_opcode.ch8"
+incbin "roms/test_opcode.ch8"
 chip8_rom_end:
 
 chip8_font:

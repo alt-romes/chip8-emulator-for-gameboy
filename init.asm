@@ -97,7 +97,7 @@ START_ADDRESS EQU $200
     add hl, bc ; hl += 24
 .dont_add_offset:
     ld a, d ; unstore value from d
-    cp 32; while a < 32 (number of chip8 tiles) keep placing them
+    cp 128+32; while a < 32 (number of chip8 tiles) keep placing them
     jr c, .fill_tilemap
 
     ; Turn screen on, and turn background display on (bit 7 and bit 0)
