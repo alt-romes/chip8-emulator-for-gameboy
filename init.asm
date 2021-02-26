@@ -85,7 +85,7 @@ START_ADDRESS EQU $200
 
     ; Set tilemap to 0 1 2 3 4 5 6 7 8 9 ... to use the tiles in its order
     ld hl, _SCRN0 ; hl = 9800 (background tilemap)
-    xor a
+    ld a, 128 ; Use tiles starting from 128 because the tileset is at 8800 and addressing uses signed bytes
 .fill_tilemap:
     ld [hli], a
     inc a

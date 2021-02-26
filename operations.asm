@@ -348,13 +348,13 @@ _d_drw_vx_vy_nibble: ; Draw
     call get_registers_xy ; @return e value of Vy, @return a value of Vx, @return hl address of Vx
 
     ; Get address where to draw
-    ld hl, _VRAM9000
+    ld hl, _VRAM8800
     ; Divide Vx by 8 to get tile value (snap to grid) and multiply by 16 to get tile byte offset
     srl a
     srl a
     srl a
     sla a
-    ; HL = _VRAM9000 + Vx Offset
+    ; HL = _VRAM8800 + Vx Offset
     add l
     ld l, a
     ld a, 0 ; a = 0 without changing carry
@@ -383,7 +383,7 @@ _d_drw_vx_vy_nibble: ; Draw
     sla a
     sla a
     sla a
-    ; HL = _VRAM9000 + Vx offset + Y rows offset
+    ; HL = _VRAM8800 + Vx offset + Y rows offset
     add l
     ld l, a
     ld a, 0 ; a = 0 without changing carry
