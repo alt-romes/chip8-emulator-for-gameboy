@@ -2,8 +2,9 @@
 
 A chip8 emulator made directly for the gameboy in RGBASM (assembly)
 
-This is a work in progress, not yet complete :) - right now the graphics are buffered in VRAM but because the tile bits aren't shifted the image is all f*cked*
+This is a work in progress, not yet complete :)
 
+Right now most of the main loop, CPU and memory access is working, and the graphics are buffered in VRAM. However, since the gameboy tile bits aren't shifted the image are still displayed incorrectly.
 
 
 ### Building
